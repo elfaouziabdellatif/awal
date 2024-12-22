@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.chatarea-container{
+  background-color: #f9f9f9;
+}
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 10px 0;
+  color: #6b7280; /* Gray-500 */
+}
+
+.loading-spinner p {
+  font-size: 0.875rem; /* Small text */
+  font-weight: 500;
+}
+
+.messages-container {
+  max-height: calc(100vh - 150px);
+  padding: 10px;
+  overflow-y: auto;
+  background-color: #f9f9f9;
+  position: relative;
+}
+
+.scroll-to-bottom {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  padding: 10px;
+  background-color: #1d4ed8;
+  color: white;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+.scroll-to-bottom:hover {
+  background-color: #2563eb;
+}

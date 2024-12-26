@@ -17,4 +17,10 @@ export const fetchMessages = (senderId, recipientId, page) =>
 export const sendMessage = (data) => apiClient.post("/send", data);
 
 export const fetchUsers = (user) => apiClient.get("/users", { params: { excludeId: user.id } });
+export const markMessagesAsRead = (userId, selectedUserId) =>
+  apiClient.post("/messages/mark-as-read", {
+    userId,
+    selectedUserId,
+  }
+);
 

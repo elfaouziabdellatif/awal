@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { sendMessage } from "../../utils/api";
 import { initSocket } from "../../utils/socket";
 
-const MessageInput = ({ selectedUser, userInfo }) => {
+const MessageInput = ({ selectedUser, userInfo ,setMessages }) => {
   const [message, setMessage] = useState("");
 
   const handleSend = () => {
@@ -18,16 +18,32 @@ const MessageInput = ({ selectedUser, userInfo }) => {
       if(socket)
       {
         socket.emit("sendMessage", {
-          senderId: userInfo.id,
-          receiverId: selectedUser._id,
-          content: message,
+          sender: userInfo.id,
+          recipient: selectedUser._id,
+          message: message,
         });
         
       }
-      
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: userInfo.id,
+          recipient: selectedUser._id,
+          message,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
       setMessage(""); // Reset message input after sending
     }
   };
+
+  const handlekeydown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
 
   return (
     <div className="flex items-center space-x-4">
@@ -37,9 +53,11 @@ const MessageInput = ({ selectedUser, userInfo }) => {
         placeholder="Type a message..."
         value={message}
         onChange={(e) => setMessage(e.target.value)}
+        onKeyDown={handlekeydown}
       />
       <button
         onClick={handleSend}
+        
         className="bg-teal-500 text-white p-3 rounded-full hover:bg-teal-600 transition-all"
       >
         Send

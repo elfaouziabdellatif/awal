@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { fetchMessages } from "../../utils/api";
+import { fetchMessages,markMessagesAsRead } from "../../utils/api";
 import MessageInput from "./MessageInput";
 
-const ChatArea = ({ selectedUser, userInfo }) => {
+const ChatArea = ({ selectedUser, userInfo ,messagesInstantly }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -23,9 +23,30 @@ const ChatArea = ({ selectedUser, userInfo }) => {
         }
 
     } );
+    markMessagesAsRead(userInfo.id, selectedUser._id).catch((error) =>
+      console.error("Error marking messages as read:", error)
+    );
     }
 
   }, [selectedUser]);
+
+  useEffect(() => {
+    console.log('messagesInstantly',messagesInstantly)
+    console.log("messages ",messages)
+    console.log(messagesInstantly?.sender , selectedUser?._id)
+    console.log(messagesInstantly?.recipient  , userInfo?.id)
+    if(messagesInstantly){
+      
+        
+          if (selectedUser && (messagesInstantly?.sender === selectedUser?._id || messagesInstantly?.recipient === userInfo?.id)) {
+            setMessages((prev) => [...prev, messagesInstantly]);
+          }
+        
+    }
+    
+      
+   
+  }, [messagesInstantly]);
 
   // Scroll to the bottom when the component is first loaded or messages change
   useEffect(() => {
@@ -128,8 +149,9 @@ const ChatArea = ({ selectedUser, userInfo }) => {
         className="flex flex-col gap-4"
         >
         {messages.map((message, index) => (
-          <div
-            key={index}
+          <div key={index} >
+<div
+            
             className={`p-3 rounded-lg shadow-md ${
               message.sender === userInfo.id
                 ? "bg-teal-200 text-right"
@@ -137,7 +159,23 @@ const ChatArea = ({ selectedUser, userInfo }) => {
             }`}
           >
             <p>{message.message}</p>
+
+            
           </div>
+
+            <div>
+
+            {
+            index === messages.length - 1 &&
+            message.sender === userInfo.id && ( // Only for messages sent by the current user
+              <span className={`status ${message.read ? "read" : "unread"}`}>
+                {message.read ? "✔ Read" : ""}
+              </span>
+            )}
+            </div>
+            </div>
+          
+          
         ))}
         </div>
         
@@ -156,7 +194,9 @@ const ChatArea = ({ selectedUser, userInfo }) => {
       {/* Message input */}
       {selectedUser && (
         <div className="bg-white p-4 border-t border-gray-200">
-          <MessageInput selectedUser={selectedUser} userInfo={userInfo} />
+          <MessageInput selectedUser={selectedUser} userInfo={userInfo}
+          setMessages = {setMessages}
+           />
         </div>
       )}
     </div>

@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
 import { clearUserInfo } from "../store/userSlice";
-import { initSocket } from "../utils/socket"; 
+import { fetchUsers } from "../utils/api";
 import Sidebar from "../components/home/SideBar";
 import protectedRoute from "../utils/protectedRouter";
 import ChatArea from "../components/home/ChatArea";
-import Navbar from "../components/layout/navbar";
-import { fetchUsers } from "../utils/api";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { useSocket } from "../context/useSocket";
 
 function Home() {
   const dispatch = useDispatch();
@@ -19,6 +15,11 @@ function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
   const [notification, setNotification] = useState(); 
+  const [messagesInstantly, setMessagesInstantly] = useState([]);
+  
+  // Access socket from context
+  const socket = useSocket();
+
   useEffect(() => {
     const loadUsers = async () => {
       try {
@@ -38,9 +39,7 @@ function Home() {
   }, [userInfo]);
 
   useEffect(() => {
-    const initializeSocket = () => {
-      const socket = initSocket();
-
+    if (socket && userInfo?.id) {
       socket.emit("userLoggedIn", {
         username: userInfo.username,
         userId: userInfo.id,
@@ -51,26 +50,24 @@ function Home() {
         setIsLoading(false);
       });
 
-      socket.on('receiveMessage', (message) => {
-        const { senderId, receiverId ,content} = message;
-        console.log('message received from ', senderId, 'content:', content);
-        
-        if( userInfo.id === receiverId){
-          console.log("you've received a message from " , senderId , ': ',content)
-          setNotification({senderId, content});
+      socket.on("receiveMessage", (data) => {
+        const { sender, recipient, message } = data;
+        console.log("Message received from", sender, "message:", message);
+
+        if (userInfo.id === recipient) {
+          console.log("You've received a message from", sender, ": ", message);
+          setNotification({ sender, message });
+          setMessagesInstantly(data);
         }
       });
 
+      // Cleanup on unmount
       return () => {
-        socket.disconnect();
+        socket.off("updateOnlineUsers");
+        socket.off("receiveMessage");
       };
-    };
-
-    if (userInfo.id) {
-      const cleanupSocket = initializeSocket();
-      return cleanupSocket;
     }
-  }, [userInfo]);
+  }, [socket, userInfo]);
 
   const handleLogout = () => {
     dispatch(clearUserInfo());
@@ -82,19 +79,19 @@ function Home() {
 
   return (
     <div className="flex flex-col h-screen">
-      
       <div className="flex h-full">
-        <Sidebar 
-          users={users} 
-          onlineUsers={onlineUsers} 
-          setSelectedUser={setSelectedUser} 
+        <Sidebar
+          users={users}
+          onlineUsers={onlineUsers}
+          setSelectedUser={setSelectedUser}
           userInfo={userInfo}
           handleLogout={handleLogout}
           notification={notification}
         />
-        <ChatArea 
-          userInfo={userInfo} 
-          selectedUser={selectedUser} 
+        <ChatArea
+          userInfo={userInfo}
+          selectedUser={selectedUser}
+          messagesInstantly={messagesInstantly}
         />
       </div>
     </div>

@@ -6,7 +6,7 @@ export default function Home() {
     const router = useRouter();
 
     useEffect(() => {
-        router.push('/login');  // Redirect to login
+        router.push('/home');  // Redirect to login
     }, []);
 
     return null;  // Or a loading spinner while redirecting

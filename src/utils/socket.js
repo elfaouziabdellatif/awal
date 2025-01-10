@@ -8,16 +8,20 @@ export const initSocket = () => {
   if (!socket) {
     socket = io(SOCKET_URL, {
       transports: ["websocket"],
-      reconnectionAttempts: 5, // Try to reconnect 5 times 
+      reconnection: true, // Reconnect automatically
+      reconnectionAttempts: 5, // Try reconnecting 5 times
+      autoConnect: true,
+      reconnectionDelay: 1000,  // Delay between reconnection attempts
+      reconnectionDelayMax: 5000 // Try to reconnect 5 times 
     });
 
     // Debugging
     socket.on("connect", () => {
-      //console.log("Socket connected:", socket.id);
+      console.log("Socket connected:", socket.id);
     });
 
     socket.on("disconnect", () => {
-      //console.log("Socket disconnected");
+      console.log("Socket disconnected");
     });
   }
   return socket;

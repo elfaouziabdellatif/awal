@@ -22,5 +22,6 @@ export const markMessagesAsRead = (userId, selectedUserId) =>
     userId,
     selectedUserId,
   }
-);
+)
+;
 

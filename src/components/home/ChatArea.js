@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { fetchMessages,markMessagesAsRead } from "../../utils/api";
 import MessageInput from "./MessageInput";
+import { useSocket } from "../../context/useSocket";
+import { tr } from "framer-motion/client";
 
-const ChatArea = ({ selectedUser, userInfo ,messagesInstantly }) => {
+const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstantly,visibilityApp ,isUserOnline}) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -11,9 +13,79 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly }) => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [scrollHeight, setScrollHeight] = useState(0);
+  const [read, setRead] = useState(false);
+  const [scrollToUnviewedMessages, setScrollToUnviewedMessages] = useState(false);
+  const socket = useSocket();
+  const messagesRef = useRef(messages);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+ 
+  useEffect(() => {
+    socket.on("read-receipt", ({ sender, recipient }) => {
+      console.log("Read receipt received:", { sender, recipient });
+      console.log(recipient === userInfo.id)
+      if ( recipient === userInfo.id) {
+        console.log(`Your message has been read by: ${recipient}`);
+        
+        // Update the `read` status of the messages
+        const updatedMessages = messagesRef.current.map((msg) =>
+          msg.sender === recipient && msg.recipient === sender
+            ? { ...msg, isSeen: true }
+            : msg
+        );
+  
+        // Update the ref with the new messages
+        messagesRef.current = updatedMessages;
+        setMessages(updatedMessages);
+        console.log(messagesRef);
+      }
+    });
+  
+    return () => socket.off("read-receipt");
+  }, [socket]);
+  
+  
+  
+
+
+  useEffect(() => {
+    if (selectedUser ) {
+      const isImmediateMessage =
+        messagesInstantly?.sender === selectedUser._id &&
+        messagesInstantly?.recipient === userInfo.id;
+      console.log('isImmediateMessage',isImmediateMessage)
+      console.log('messagesInstantly',messagesInstantly)
+      const isLastMessageForCurrentUser =
+        messages[messages.length - 1]?.recipient === userInfo.id;
+  
+      if (isImmediateMessage || isLastMessageForCurrentUser) {
+        const readPayload = {
+          recipient: userInfo.id,
+          sender: selectedUser._id,
+          recivedmessage: isImmediateMessage ? messagesInstantly : undefined,
+        };
+  
+        console.log(
+          `Emitting markAsRead ${
+            isImmediateMessage ? "immediately" : "after selecting user"
+          }:`,
+          readPayload
+        );
+  
+        socket.emit("markAsRead", readPayload);
+        markMessagesAsRead(userInfo.id, selectedUser._id);
+      }
+    }
+  }, [selectedUser, messagesInstantly,messages.length]);
+  
 
   useEffect(() => {
     if (selectedUser) {
+      console.log('selected user is :', selectedUser.username)
+
       setPage(1);
       setMessages([]);
       loadMessages(1, true, () => {
@@ -21,39 +93,48 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly }) => {
         if (chatContainerRef.current) {
           chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
-
+        
+      
     } );
-    markMessagesAsRead(userInfo.id, selectedUser._id).catch((error) =>
-      console.error("Error marking messages as read:", error)
-    );
+    
+    
     }
 
   }, [selectedUser]);
 
   useEffect(() => {
-    console.log('messagesInstantly',messagesInstantly)
-    console.log("messages ",messages)
-    console.log(messagesInstantly?.sender , selectedUser?._id)
-    console.log(messagesInstantly?.recipient  , userInfo?.id)
-    if(messagesInstantly){
-      
-        
-          if (selectedUser && (messagesInstantly?.sender === selectedUser?._id || messagesInstantly?.recipient === userInfo?.id)) {
-            setMessages((prev) => [...prev, messagesInstantly]);
-          }
-        
+    if (page === 1 && messages.length > 0) {
+      // Only scroll to the bottom on the first page
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
     
-      
-   
-  }, [messagesInstantly]);
 
-  // Scroll to the bottom when the component is first loaded or messages change
+  }, [ messages,page]);
+  
   useEffect(() => {
-    chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-  }, [ selectedUser]);
+    console.log(isUserOnline)
+    if (messagesInstantly && selectedUser) {
+      if (
+        messagesInstantly.sender === selectedUser._id &&
+        messagesInstantly.recipient === userInfo.id
+      ) {
+         if(page > 1 && messages.length > 0 && !scrollToUnviewedMessages)  
+          {
+            console.log('you should scroll to bottom')
+            setScrollToUnviewedMessages(true);
+          }
+        setMessages((prev) => [...prev, { ...messagesInstantly, isSeen: true }]);
+        setMessagesInstantly(null)
 
-  const loadMessages = (page, reset = false, callback) => {
+      
+      }
+    }
+  }, [messagesInstantly, selectedUser]);
+  
+  
+  
+
+  const  loadMessages =  (page, reset = false, callback) => {
     setLoading(true);
      // Save the current scroll position before loading messages
     const prevScrollTop = chatContainerRef.current.scrollHeight;
@@ -68,6 +149,12 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly }) => {
             setMessages((prevMessages) =>
               reset ? response.data : [...response.data, ...prevMessages]
             );
+            setHasMore(true);
+            
+            // if (selectedUser && visibilityApp) {
+            //   handleMarkAsRead(response.data);
+            // }
+            
           }
           setScrollHeight(chatContainerRef.current.scrollHeight);
           // Trigger the callback after messages are added
@@ -89,21 +176,18 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly }) => {
           
     }, 500); // Optional: Add delay to improve UX
   };
-  useEffect(() => {
-    if (page === 1 && messages.length > 0) {
-      // Only scroll to the bottom on the first page
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [messages, page]);
+
+  
+
   const handleScroll = () => {
     const scrollTop = chatContainerRef.current.scrollTop;
-
   
     // If the user scrolls to the top, load more messages
     if (scrollTop === 0 && hasMore && !loading) {
       setPage((prevPage) => prevPage + 1);
   
       loadMessages(page + 1, false, (prevScrollTop) => {
+        console.log('page +1 :',page+1)
         const newScrollHeight = chatContainerRef.current.scrollHeight;
   
         // Use console.table for comparing old and new scroll values
@@ -118,25 +202,32 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly }) => {
   
 
   const scrollToBottom = () => {
-    chatContainerRef.current.scrollToBottom = 0
-    setIsAtBottom(true);
+
+    chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    
+    setScrollToUnviewedMessages(false)
   };
 
   return (
-    <div className="chatarea-container flex flex-col w-full ">
-      {/* Chat header */}
-      <div className="selecteduser-container bg-gradient-to-r from-teal-500 to-blue-500 p-4 text-white shadow-lg">
+    <div className="chatarea-container flex flex-col w-full h-full relative">
+      {/* Chat Header */}
+      <div className="selecteduser-container bg-gradient-to-r from-teal-500 to-blue-500 p-4 text-white shadow-lg flex items-center">
         {selectedUser ? (
-          <h6 className="text-2xl font-semibold">{selectedUser.username}</h6>
+          <>
+            <div className="w-10 h-10 bg-white text-teal-500 rounded-full flex items-center justify-center mr-4">
+              {selectedUser.username[0].toUpperCase()}
+            </div>
+            <h6 className="text-2xl font-semibold">{selectedUser.username}</h6>
+          </>
         ) : (
           <h6 className="text-2xl font-semibold">Select a user to chat with</h6>
         )}
       </div>
-
-      {/* Messages container */}
+  
+      {/* Messages Container */}
       <div
         ref={chatContainerRef}
-        className="messages-container overflow-y-auto p-4 bg-gray-100 relative"
+        className="messages-container overflow-y-auto p-4 bg-gray-50 flex-grow relative"
         onScroll={handleScroll}
       >
         {loading && (
@@ -145,62 +236,75 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly }) => {
             <div className="inline-block w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
-        <div
-        className="flex flex-col gap-4"
-        >
-        {messages.map((message, index) => (
-          <div key={index} >
-<div
-            
-            className={`p-3 rounded-lg shadow-md ${
-              message.sender === userInfo.id
-                ? "bg-teal-200 text-right"
-                : "bg-white text-left"
-            }`}
-          >
-            <p>{message.message}</p>
-
-            
-          </div>
-
-            <div>
-
-            {
-            index === messages.length - 1 &&
-            message.sender === userInfo.id && ( // Only for messages sent by the current user
-              <span className={`status ${message.read ? "read" : "unread"}`}>
-                {message.read ? "✔ Read" : ""}
-              </span>
-            )}
-            </div>
-            </div>
-          
-          
-        ))}
+  
+        <div className="flex flex-col gap-4">
+          {messages.map((message, index) => {
+            const isSender = message.sender === userInfo.id;
+            const messageAlignment = isSender ? 'self-end' : 'self-start';
+            const bubbleColor = isSender ? 'bg-teal-100' : 'bg-white';
+            const textColor = 'text-gray-800';
+            const time = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+            return (
+              <div key={index} className={`flex flex-col ${messageAlignment} max-w-xs md:max-w-md`}>
+                <div className={`p-3 rounded-lg shadow-md ${bubbleColor} ${textColor}`}>
+                  <p>{message.message}</p>
+                  <div className="flex items-center justify-end mt-1 space-x-1 text-xs text-gray-500">
+                    <span>{time}</span>
+                    {
+                      message.isDelivered
+                      ? isSender && (
+                      <>
+                        <i className={`fas fa-check ${message.isSeen ? 'text-blue-500' : ''}`}></i>
+                        <i className={`fas fa-check ${message.isSeen ? 'text-blue-500' : ''}`}></i>
+                      </>
+                    ) : (
+                      <i className={`fas fa-check text-gray-500`}></i>
+                    )
+                    }
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-        
       </div>
+  
+      {/* Scroll-to-Bottom Button */}
+      {/* Scroll-to-Bottom Button */}
+{scrollToUnviewedMessages && (
+  <div
+    className="absolute bottom-24 left-0 right-0 flex justify-center items-center"
+  >
+    <button
+      onClick={scrollToBottom}
+      className="bg-teal-500 text-white p-3 rounded-full shadow-lg hover:bg-teal-600 z-10"
+    >
+      <i className="fas fa-arrow-down text-lg"></i>
+    </button>
+  </div>
+)}
 
-      {/* Scroll to bottom button */}
-      {!isAtBottom && (
-        <button
-          onClick={scrollToBottom}
-          className="scroll-to-bottom fixed bottom-16 right-8 bg-blue-500 text-white p-2 rounded-full shadow-lg hover:bg-blue-600"
-        >
-          ⬇ Scroll to Latest
-        </button>
-      )}
 
-      {/* Message input */}
+  
+      {/* Message Input */}
       {selectedUser && (
-        <div className="bg-white p-4 border-t border-gray-200">
-          <MessageInput selectedUser={selectedUser} userInfo={userInfo}
-          setMessages = {setMessages}
-           />
+        <div className="bg-white p-4 border-t border-gray-200 relative">
+          <MessageInput
+            selectedUser={selectedUser}
+            userInfo={userInfo}
+            setMessages={setMessages}
+            setRead={setRead}
+          />
         </div>
       )}
     </div>
   );
+  
+  
+  
+  
+  
 };
 
 export default ChatArea;

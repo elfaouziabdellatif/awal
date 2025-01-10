@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { clearUserInfo } from "../store/userSlice";
 import { fetchUsers } from "../utils/api";
@@ -13,19 +13,32 @@ function Home() {
   const [users, setUsers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [notification, setNotification] = useState(); 
+  const [selectedUser, setSelectedUser] = useState("hamid");
+  const [notification, setNotification] = useState();
   const [messagesInstantly, setMessagesInstantly] = useState([]);
-  
+  const [visibilityApp, setVisibilityApp] = useState(false);
+  const [read, setRead] = useState();
+  const selectedUserRef = useRef(selectedUser)
+  const [isUserOline, setIsUserOline] = useState(false);
+
   // Access socket from context
   const socket = useSocket();
-
+  useEffect(() => {
+    selectedUserRef.current = selectedUser;
+    setMessagesInstantly(null)
+  }, [selectedUser]);
+  
   useEffect(() => {
     const loadUsers = async () => {
       try {
         setIsLoading(true); // Start loading
         const response = await fetchUsers(userInfo);
-        setUsers(response.data); // Assume response.data contains the user list
+        setUsers(response.data);
+        if(response.data.length > 0)
+        {
+          setSelectedUser(response.data[0]);
+        }
+         // Assume response.data contains the user list
       } catch (error) {
         console.error("Error fetching users:", error);
       } finally {
@@ -39,35 +52,81 @@ function Home() {
   }, [userInfo]);
 
   useEffect(() => {
-    if (socket && userInfo?.id) {
-      socket.emit("userLoggedIn", {
-        username: userInfo.username,
-        userId: userInfo.id,
-      });
+    // Check for socket connection on visibility change
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        setVisibilityApp(true);
+  
+        if (socket && !socket.connected) {
+          socket.connect(); // Reconnect if the socket is not connected
+          socket.emit("userLoggedIn", {
+            username: userInfo.username,
+            userId: userInfo.id,
+          });
+        }
+      } else if (document.visibilityState === "hidden") {
+        setVisibilityApp(false);
+        if (socket && socket.connected) {
+          // socket.disconnect(); // Disconnect the socket when the app is not visible
+        }
+      }
+    };
+  
+    // Add the event listener for visibilitychange
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+  
+    // Cleanup the event listener on component unmount
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [socket]);
+  
 
+  useEffect(() => {
+    if (socket && userInfo?.id) {
       socket.on("updateOnlineUsers", (updatedOnlineUsers) => {
         setOnlineUsers(updatedOnlineUsers);
+        console.log(`updated online users `,updatedOnlineUsers);
         setIsLoading(false);
       });
-
+  
       socket.on("receiveMessage", (data) => {
-        const { sender, recipient, message } = data;
-        console.log("Message received from", sender, "message:", message);
-
+        const { id,sender, recipient, message } = data;
+  
         if (userInfo.id === recipient) {
-          console.log("You've received a message from", sender, ": ", message);
           setNotification({ sender, message });
-          setMessagesInstantly(data);
+          console.log(`selected user ${selectedUserRef.current.username} `);
+          
+          if (selectedUserRef.current?._id === sender) {
+            console.log(`this user ${selectedUserRef.current.username} sent you a message immediately to u as: ${userInfo.username}`);
+            setMessagesInstantly(data);
+          }
         }
       });
-
-      // Cleanup on unmount
+      socket.on('disconnect', (reason) => {
+        console.log('Disconnected due to:', reason);
+        // Optionally, try to reconnect here if needed
+      });
+      
       return () => {
         socket.off("updateOnlineUsers");
         socket.off("receiveMessage");
+        socket.off("disconnect");
       };
     }
   }, [socket, userInfo]);
+  
+  useEffect(() => {
+    if(onlineUsers && selectedUser){
+      console.log(`selected user ${selectedUser._id} `);
+      console.log(`online users `,onlineUsers);
+      console.log(onlineUsers.filter((user) => user.userId === selectedUser._id)[0]?.userId)
+      setIsUserOline(onlineUsers.filter((user) => user.userId === selectedUser._id)[0]?.userId)
+    }
+  }, [onlineUsers, selectedUser]);
+
+  
+  
 
   const handleLogout = () => {
     dispatch(clearUserInfo());
@@ -84,14 +143,19 @@ function Home() {
           users={users}
           onlineUsers={onlineUsers}
           setSelectedUser={setSelectedUser}
+          selectedUser={selectedUser}
           userInfo={userInfo}
           handleLogout={handleLogout}
           notification={notification}
+          setNotification={setNotification}
         />
         <ChatArea
           userInfo={userInfo}
           selectedUser={selectedUser}
           messagesInstantly={messagesInstantly}
+          setMessagesInstantly={setMessagesInstantly}
+          visibilityApp={visibilityApp}
+          isUserOnline={isUserOline}
         />
       </div>
     </div>

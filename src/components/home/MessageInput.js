@@ -2,11 +2,10 @@ import React, { useState } from "react";
 import { sendMessage } from "../../utils/api";
 import { initSocket } from "../../utils/socket";
 
-const MessageInput = ({ selectedUser, userInfo ,setMessages }) => {
+const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead}) => {
   const [message, setMessage] = useState("");
 
   const handleSend = () => {
-
     if (message.trim()) {
       const socket = initSocket();
       
@@ -18,10 +17,14 @@ const MessageInput = ({ selectedUser, userInfo ,setMessages }) => {
       if(socket)
       {
         socket.emit("sendMessage", {
+          id : crypto.randomUUID().toString(),
           sender: userInfo.id,
           recipient: selectedUser._id,
           message: message,
+          timestamp: new Date().toISOString(),
         });
+
+        
         
       }
       setMessages((prev) => [
@@ -29,10 +32,13 @@ const MessageInput = ({ selectedUser, userInfo ,setMessages }) => {
         {
           sender: userInfo.id,
           recipient: selectedUser._id,
-          message,
-          createdAt: new Date().toISOString(),
+          message: message,
+          read: false,
+          timestamp: new Date().toISOString(),
         },
       ]);
+      
+      setRead(false);
       setMessage(""); // Reset message input after sending
     }
   };

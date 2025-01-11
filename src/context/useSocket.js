@@ -7,7 +7,6 @@ export const SocketProvider = ({ children, token}) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    console.log("Token:", token)
     if (token) {
       
       const newSocket = initSocket(token);

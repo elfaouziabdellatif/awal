@@ -20,15 +20,14 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
 
   useEffect(() => {
     messagesRef.current = messages;
+    console.log(messages)
   }, [messages]);
 
  
   useEffect(() => {
+    if (socket) {
     socket.on("read-receipt", ({ sender, recipient }) => {
-      console.log("Read receipt received:", { sender, recipient });
-      console.log(recipient === userInfo.id)
       if ( recipient === userInfo.id) {
-        console.log(`Your message has been read by: ${recipient}`);
         
         // Update the `read` status of the messages
         const updatedMessages = messagesRef.current.map((msg) =>
@@ -38,16 +37,60 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
         );
   
         // Update the ref with the new messages
-        messagesRef.current = updatedMessages;
         setMessages(updatedMessages);
-        console.log(messagesRef);
       }
     });
+    
   
     return () => socket.off("read-receipt");
+  }
   }, [socket]);
+  // useEffect(() => {
+  //   if (selectedUser) {
+  //     console.log(messagesRef)
+  //     // Check if the last message to the selected user is not delivered
+  //     const lastMessage = messages
+  //       .filter((msg) => msg.sender === userInfo.id && msg.recipient === selectedUser._id)
+  //       .slice(-1)[0]; // Get the last message sent by the current user to the selected user
   
+  //     console.log("Last message:", lastMessage);
+  //     if (lastMessage && !lastMessage.isDelivered) {
+  //       socket.emit("checkDeliveredMessages", { recipient: selectedUser._id });
+  //     }
+  //   }
+  // }, [selectedUser, socket, userInfo.id , messages]);
   
+
+  // useEffect(() => {
+  //   if (selectedUser) {
+  //     // Emit to check delivered messages for the selected user
+      
+  //     // Define the handler function
+  //     const handleDeliveredMessagesUpdate = ({ delivredStatus }) => {
+  //       if (delivredStatus.delivered) {
+  
+  //         // Update messages where the sender is the current user and recipient is the selected user
+  //         setMessages((prevMessages) =>
+  //           prevMessages.map((msg) =>
+  //             msg.sender === userInfo.id && msg.recipient === selectedUser._id
+  //               ? { ...msg, isDelivered: delivredStatus.delivered, deliveredAt: delivredStatus.deliveredAt }
+  //               : msg
+  //           )
+  //         );
+  //       }
+  //     };
+  
+  //     // Attach the listener
+  //     socket.on("deliveredMessagesUpdate", handleDeliveredMessagesUpdate);
+  
+  //     // Cleanup the listener on unmount or dependency change
+  //     return () => {
+  //       socket.off("deliveredMessagesUpdate", handleDeliveredMessagesUpdate);
+  //     };
+  //   }
+  // }, [socket]);
+  
+
   
 
 
@@ -56,8 +99,6 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
       const isImmediateMessage =
         messagesInstantly?.sender === selectedUser._id &&
         messagesInstantly?.recipient === userInfo.id;
-      console.log('isImmediateMessage',isImmediateMessage)
-      console.log('messagesInstantly',messagesInstantly)
       const isLastMessageForCurrentUser =
         messages[messages.length - 1]?.recipient === userInfo.id;
   
@@ -68,12 +109,6 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
           recivedmessage: isImmediateMessage ? messagesInstantly : undefined,
         };
   
-        console.log(
-          `Emitting markAsRead ${
-            isImmediateMessage ? "immediately" : "after selecting user"
-          }:`,
-          readPayload
-        );
   
         socket.emit("markAsRead", readPayload);
         markMessagesAsRead(userInfo.id, selectedUser._id);
@@ -84,7 +119,6 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
 
   useEffect(() => {
     if (selectedUser) {
-      console.log('selected user is :', selectedUser.username)
 
       setPage(1);
       setMessages([]);
@@ -119,7 +153,6 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
       ) {
          if(page > 1 && messages.length > 0 && !scrollToUnviewedMessages)  
           {
-            console.log('you should scroll to bottom')
             setScrollToUnviewedMessages(true);
           }
         setMessages((prev) => [...prev, { ...messagesInstantly, isSeen: true }]);
@@ -186,7 +219,6 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
       setPage((prevPage) => prevPage + 1);
   
       loadMessages(page + 1, false, (prevScrollTop) => {
-        console.log('page +1 :',page+1)
         const newScrollHeight = chatContainerRef.current.scrollHeight;
   
         // Use console.table for comparing old and new scroll values
@@ -251,8 +283,8 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
                   <div className="flex items-center justify-end mt-1 space-x-1 text-xs text-gray-500">
                     <span>{time}</span>
                     {
-                      message.isDelivered
-                      ? isSender && (
+                      isSender ?
+                       message.isDelivered ?  (
                       <>
                         <i className={`fas fa-check ${message.isSeen ? 'text-blue-500' : ''}`}></i>
                         <i className={`fas fa-check ${message.isSeen ? 'text-blue-500' : ''}`}></i>
@@ -260,6 +292,7 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
                     ) : (
                       <i className={`fas fa-check text-gray-500`}></i>
                     )
+                      : null
                     }
                   </div>
                 </div>

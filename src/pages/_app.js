@@ -11,7 +11,6 @@ import { useEffect } from 'react';
 function MyApp({ Component, pageProps }) {
   const userInfo = useSelector((state) => state.user);
   const isLoggedIn = userInfo;
-  console.log('userInfo', userInfo);  
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>

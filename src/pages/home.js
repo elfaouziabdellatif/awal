@@ -85,7 +85,6 @@ function Home() {
     if (socket && userInfo?.id) {
       socket.on("updateOnlineUsers", (updatedOnlineUsers) => {
         setOnlineUsers(updatedOnlineUsers);
-        console.log(`updated online users `,updatedOnlineUsers);
         setIsLoading(false);
       });
   
@@ -94,10 +93,8 @@ function Home() {
   
         if (userInfo.id === recipient) {
           setNotification({ sender, message });
-          console.log(`selected user ${selectedUserRef.current.username} `);
           
           if (selectedUserRef.current?._id === sender) {
-            console.log(`this user ${selectedUserRef.current.username} sent you a message immediately to u as: ${userInfo.username}`);
             setMessagesInstantly(data);
           }
         }

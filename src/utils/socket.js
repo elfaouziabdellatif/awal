@@ -18,7 +18,7 @@ export const initSocket = (token) => {
 
     // Debugging
     socket.on("connect", () => {
-      console.log("Socket connected:", socket.id);
+      console.log("Socket connected");
     });
 
     socket.on("disconnect", () => {

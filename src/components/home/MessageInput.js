@@ -5,18 +5,20 @@ import { initSocket } from "../../utils/socket";
 const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead}) => {
   const [message, setMessage] = useState("");
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (message.trim()) {
       const socket = initSocket();
       
-      sendMessage({
+       const response = await sendMessage({
         sender: userInfo.id,
         recipient: selectedUser._id,
         message,
-      });
-      if(socket)
+      })
+      
+      if(response.status === 201 &&  socket)
       {
-        socket.emit("sendMessage", {
+        
+        await socket.emit("sendMessage", {
           id : crypto.randomUUID().toString(),
           sender: userInfo.id,
           recipient: selectedUser._id,
@@ -24,19 +26,26 @@ const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead}) => {
           timestamp: new Date().toISOString(),
         });
 
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: userInfo.id,
+            recipient: selectedUser._id,
+            message: message,
+            read: false,
+            isDelivered:false,
+            deliveredAt : null,
+            timestamp: new Date().toISOString(),
+          },
+
+        
+        ]);
+
+
         
         
       }
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: userInfo.id,
-          recipient: selectedUser._id,
-          message: message,
-          read: false,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      
       
       setRead(false);
       setMessage(""); // Reset message input after sending

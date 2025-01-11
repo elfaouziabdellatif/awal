@@ -9,15 +9,15 @@ import { SocketProvider } from '../context/useSocket';
 import { useEffect } from 'react';
 
 function MyApp({ Component, pageProps }) {
-  const userInfo = useSelector((state) => state.user.userInfo);
+  const userInfo = useSelector((state) => state.user);
   const isLoggedIn = userInfo;
-  
+  console.log('userInfo', userInfo);  
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         {/* Conditionally wrap with SocketProvider if logged in */}
         {isLoggedIn ? (
-          <SocketProvider userInfo={userInfo}>
+          <SocketProvider token={userInfo.token}>
             <Component {...pageProps} />
           </SocketProvider>
         ) : (

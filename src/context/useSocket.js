@@ -1,28 +1,28 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { initSocket } from '../utils/socket';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { initSocket, disconnectSocket } from "../utils/socket";
 
 const SocketContext = createContext();
 
-export const SocketProvider = ({ children, userInfo }) => {
+export const SocketProvider = ({ children, token}) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    if (userInfo?.id) {
-      const newSocket = initSocket();
-      newSocket.emit("userLoggedIn", {
-        username: userInfo.username,
-        userId: userInfo.id,
-      });
+    console.log("Token:", token)
+    if (token) {
+      
+      const newSocket = initSocket(token);
+      newSocket.connect(); // Connect only after initializing with the token
       setSocket(newSocket);
 
-      return () => newSocket.disconnect();
+      // Cleanup on unmount or logout
+      return () => {
+        disconnectSocket();
+      };
     }
-  }, [userInfo]);
+  }, [token]);
 
   return (
-    <SocketContext.Provider value={socket}>
-      {children}
-    </SocketContext.Provider>
+    <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
   );
 };
 

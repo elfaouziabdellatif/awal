@@ -13,13 +13,12 @@ function Home() {
   const [users, setUsers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState("hamid");
+  const [selectedUser, setSelectedUser] = useState();
   const [notification, setNotification] = useState();
   const [messagesInstantly, setMessagesInstantly] = useState([]);
   const [visibilityApp, setVisibilityApp] = useState(false);
   const [read, setRead] = useState();
   const selectedUserRef = useRef(selectedUser)
-  const [isUserOline, setIsUserOline] = useState(false);
 
   // Access socket from context
   const socket = useSocket();
@@ -116,14 +115,7 @@ function Home() {
     }
   }, [socket, userInfo]);
   
-  useEffect(() => {
-    if(onlineUsers && selectedUser){
-      console.log(`selected user ${selectedUser._id} `);
-      console.log(`online users `,onlineUsers);
-      console.log(onlineUsers.filter((user) => user.userId === selectedUser._id)[0]?.userId)
-      setIsUserOline(onlineUsers.filter((user) => user.userId === selectedUser._id)[0]?.userId)
-    }
-  }, [onlineUsers, selectedUser]);
+  
 
   
   
@@ -155,7 +147,6 @@ function Home() {
           messagesInstantly={messagesInstantly}
           setMessagesInstantly={setMessagesInstantly}
           visibilityApp={visibilityApp}
-          isUserOnline={isUserOline}
         />
       </div>
     </div>

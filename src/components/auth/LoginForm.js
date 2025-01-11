@@ -25,19 +25,8 @@ const LoginForm = () => {
                 token: response.token
             }));
             // Initialize the socket
-            const socket = initSocket();
-            
-            // Emit user login event
-            socket.emit("userLoggedIn", {
-                userId: response.user.id,
-                username: response.user.username,
-            });
-
-            // Listen for online users updates
-            socket.on("updateOnlineUsers", (updatedOnlineUsers) => {
-                setOnlineUsers(updatedOnlineUsers);
-                console.log("Updated Online Users:", updatedOnlineUsers); // Logs the correct value
-            });
+            const socket = initSocket(response.token);
+            socket.connect();
             // Redirect after login
             router.push('/home').then(() => {
                 router.reload();

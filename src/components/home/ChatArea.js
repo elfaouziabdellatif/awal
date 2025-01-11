@@ -4,7 +4,7 @@ import MessageInput from "./MessageInput";
 import { useSocket } from "../../context/useSocket";
 import { tr } from "framer-motion/client";
 
-const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstantly,visibilityApp ,isUserOnline}) => {
+const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstantly,visibilityApp}) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -112,7 +112,6 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
   }, [ messages,page]);
   
   useEffect(() => {
-    console.log(isUserOnline)
     if (messagesInstantly && selectedUser) {
       if (
         messagesInstantly.sender === selectedUser._id &&
@@ -215,7 +214,7 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
         {selectedUser ? (
           <>
             <div className="w-10 h-10 bg-white text-teal-500 rounded-full flex items-center justify-center mr-4">
-              {selectedUser.username[0].toUpperCase()}
+              {selectedUser?.username[0]?.toUpperCase()}
             </div>
             <h6 className="text-2xl font-semibold">{selectedUser.username}</h6>
           </>

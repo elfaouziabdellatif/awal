@@ -65,8 +65,8 @@ const Sidebar = ({
 
               {/* Online status indicator */}
               <span
-                className={`w-3 h-3 rounded-full ${user.isOnline ? "bg-green-500" : "bg-red-500"}`}
-              ></span>
+className={`w-3 h-3 rounded-full transition-colors duration-300 ease-in-out ${user.isOnline ? "bg-green-500" : "bg-red-500"}`}
+></span>
             </div>
           );
         })}

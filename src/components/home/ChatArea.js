@@ -26,7 +26,6 @@ const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessag
     if (socket) {
     socket.on("read-receipt", ({ sender, recipient }) => {
       if ( recipient === userInfo.id) {
-        
         // Update the `read` status of the messages
         const updatedMessages = messagesRef.current.map((msg) =>
           msg.sender === recipient && msg.recipient === sender
@@ -90,12 +89,23 @@ const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessag
   //   }
   // }, [socket]);
   
+useEffect(() => {
+     if (selectedUser && selectedUser.isOnline) {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.sender === userInfo.id && msg.recipient === selectedUser._id && !msg.isDelivered ?
+            { ...msg, isDelivered: true }
+            : msg
+        )
+      );
+     }
+   }, [selectedUser.isOnline]);
 
   
 
 
   useEffect(() => {
-    if (selectedUser ) {
+    if (socket && selectedUser ) {
       const isImmediateMessage =
         messagesInstantly?.sender === selectedUser._id &&
         messagesInstantly?.recipient === userInfo.id;
@@ -114,7 +124,7 @@ const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessag
         markMessagesAsRead(userInfo.id, selectedUser._id);
       }
     }
-  }, [selectedUser, messagesInstantly,messages.length]);
+  }, [selectedUser._id, messagesInstantly,messages.length]);
   
 
   useEffect(() => {
@@ -134,7 +144,7 @@ const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessag
     
     }
 
-  }, [selectedUser]);
+  }, [selectedUser._id]);
 
   useEffect(() => {
     if (page === 1 && messages.length > 0) {
@@ -161,7 +171,7 @@ const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessag
       
       }
     }
-  }, [messagesInstantly, selectedUser]);
+  }, [messagesInstantly, selectedUser._id]);
   
   
   

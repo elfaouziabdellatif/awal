@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { sendMessage } from "../../utils/api";
 import { initSocket } from "../../utils/socket";
+import { s } from "framer-motion/client";
 
 const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead}) => {
   const [message, setMessage] = useState("");
@@ -33,7 +34,7 @@ const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead}) => {
             recipient: selectedUser._id,
             message: message,
             read: false,
-            isDelivered:false,
+            isDelivered:selectedUser.isOnline ? true : false,
             deliveredAt : null,
             timestamp: new Date().toISOString(),
           },

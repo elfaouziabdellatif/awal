@@ -13,7 +13,7 @@ function Home() {
   const [users, setUsers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState();
+  const [selectedUser, setSelectedUser] = useState({});
   const [notification, setNotification] = useState();
   const [messagesInstantly, setMessagesInstantly] = useState([]);
   const [visibilityApp, setVisibilityApp] = useState(false);
@@ -33,7 +33,9 @@ function Home() {
         const response = await fetchUsers(userInfo);
         setUsers(response.data);
         if(response.data.length > 0)
+
         {
+          
           setSelectedUser(response.data[0]);
         }
          // Assume response.data contains the user list
@@ -49,21 +51,36 @@ function Home() {
     }
   }, [userInfo]);
 
- 
+   
+
 
   useEffect(() => {
     if (socket ) {
 
       socket.on("updateOnlineUsers", (updatedOnlineUsers) => {
-        setOnlineUsers(updatedOnlineUsers);
-        // Update users with the new online status
-        setUsers((prevUsers) =>
-          prevUsers.map((user) => ({
-            ...user,
-            isOnline: updatedOnlineUsers.some((onlineUser) => onlineUser.id === user._id),
-          }))
-        );
-        console.log("Updated online users", updatedOnlineUsers);
+        if(updatedOnlineUsers !== onlineUsers){
+          setOnlineUsers(updatedOnlineUsers);
+          // Update users with the new online status
+          setUsers((prevUsers) =>
+            prevUsers.map((user) => ({
+              ...user,
+              isOnline: updatedOnlineUsers.some((onlineUser) => onlineUser.id === user._id),
+            }))
+            
+          );
+          setSelectedUser((prevSelectedUser) => {
+            if (prevSelectedUser) {
+              return {
+                ...prevSelectedUser,
+                isOnline: updatedOnlineUsers.some(
+                  (onlineUser) => onlineUser.id === prevSelectedUser._id
+                ),
+              };
+            }
+            return prevSelectedUser;
+          });
+        }
+        
       });
   
       socket.on("receiveMessage", (data) => {
@@ -153,6 +170,7 @@ function Home() {
           messagesInstantly={messagesInstantly}
           setMessagesInstantly={setMessagesInstantly}
           visibilityApp={visibilityApp}
+          socket={socket}
         />
       </div>
     </div>

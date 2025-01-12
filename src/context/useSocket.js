@@ -11,7 +11,11 @@ export const SocketProvider = ({ children, token}) => {
       
       const newSocket = initSocket(token);
       newSocket.connect(); // Connect only after initializing with the token
+      newSocket.emit("userLoggedIn");
       setSocket(newSocket);
+      
+          
+      
 
       // Cleanup on unmount or logout
       return () => {

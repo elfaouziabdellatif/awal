@@ -8,14 +8,15 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import { SocketProvider } from '../context/useSocket';
 import { useEffect } from 'react';
 
+
 function MyApp({ Component, pageProps }) {
   const userInfo = useSelector((state) => state.user);
-  const isLoggedIn = userInfo;
+  const isLoggedIn = userInfo ;
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         {/* Conditionally wrap with SocketProvider if logged in */}
-        {isLoggedIn ? (
+        {isLoggedIn  ? (
           <SocketProvider token={userInfo.token}>
             <Component {...pageProps} />
           </SocketProvider>

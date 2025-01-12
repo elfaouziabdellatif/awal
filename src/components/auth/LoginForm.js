@@ -25,12 +25,11 @@ const LoginForm = () => {
                 token: response.token
             }));
             // Initialize the socket
-            const socket = initSocket(response.token);
-            socket.connect();
+            const socket = await initSocket(response.token);
+            await socket.connect();
+            await socket.emit("userLoggedIn");
             // Redirect after login
-            router.push('/home').then(() => {
-                router.reload();
-            });
+            router.push('/home').then(() => window.location.reload());
         } catch (error) {
             setError(error.message);
         }

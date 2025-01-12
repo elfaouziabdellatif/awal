@@ -21,6 +21,8 @@ export const initSocket = (token) => {
       console.log("Socket connected");
     });
 
+    
+
     socket.on("disconnect", () => {
       console.log("Socket disconnected");
     });

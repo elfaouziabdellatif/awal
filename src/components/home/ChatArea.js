@@ -4,7 +4,7 @@ import MessageInput from "./MessageInput";
 import { useSocket } from "../../context/useSocket";
 import { tr } from "framer-motion/client";
 
-const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstantly,visibilityApp}) => {
+const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessagesInstantly,visibilityApp}) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -15,12 +15,10 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
   const [scrollHeight, setScrollHeight] = useState(0);
   const [read, setRead] = useState(false);
   const [scrollToUnviewedMessages, setScrollToUnviewedMessages] = useState(false);
-  const socket = useSocket();
   const messagesRef = useRef(messages);
 
   useEffect(() => {
     messagesRef.current = messages;
-    console.log(messages)
   }, [messages]);
 
  
@@ -45,6 +43,8 @@ const ChatArea = ({ selectedUser, userInfo ,messagesInstantly,setMessagesInstant
     return () => socket.off("read-receipt");
   }
   }, [socket]);
+
+
   // useEffect(() => {
   //   if (selectedUser) {
   //     console.log(messagesRef)

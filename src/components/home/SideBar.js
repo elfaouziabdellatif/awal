@@ -38,7 +38,7 @@ const Sidebar = ({
       <div className="flex flex-col gap-4">
         {users.map((user) => {
           const isOnline = onlineUsers.some(
-            (onlineUser) => onlineUser.userId === user._id
+            (onlineUser) => onlineUser.id === user._id
           );
 
           // Determine whether to show the "New" badge
@@ -65,7 +65,7 @@ const Sidebar = ({
 
               {/* Online status indicator */}
               <span
-                className={`w-3 h-3 rounded-full ${isOnline ? "bg-green-500" : "bg-red-500"}`}
+                className={`w-3 h-3 rounded-full ${user.isOnline ? "bg-green-500" : "bg-red-500"}`}
               ></span>
             </div>
           );

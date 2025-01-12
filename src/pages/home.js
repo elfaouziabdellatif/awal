@@ -19,7 +19,6 @@ function Home() {
   const [visibilityApp, setVisibilityApp] = useState(false);
   const [read, setRead] = useState();
   const selectedUserRef = useRef(selectedUser)
-
   // Access socket from context
   const socket = useSocket();
   useEffect(() => {
@@ -50,42 +49,21 @@ function Home() {
     }
   }, [userInfo]);
 
-  useEffect(() => {
-    // Check for socket connection on visibility change
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        setVisibilityApp(true);
-  
-        if (socket && !socket.connected) {
-          socket.connect(); // Reconnect if the socket is not connected
-          socket.emit("userLoggedIn", {
-            username: userInfo.username,
-            userId: userInfo.id,
-          });
-        }
-      } else if (document.visibilityState === "hidden") {
-        setVisibilityApp(false);
-        if (socket && socket.connected) {
-          // socket.disconnect(); // Disconnect the socket when the app is not visible
-        }
-      }
-    };
-  
-    // Add the event listener for visibilitychange
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-  
-    // Cleanup the event listener on component unmount
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [socket]);
-  
+ 
 
   useEffect(() => {
-    if (socket && userInfo?.id) {
+    if (socket ) {
+
       socket.on("updateOnlineUsers", (updatedOnlineUsers) => {
         setOnlineUsers(updatedOnlineUsers);
-        setIsLoading(false);
+        // Update users with the new online status
+        setUsers((prevUsers) =>
+          prevUsers.map((user) => ({
+            ...user,
+            isOnline: updatedOnlineUsers.some((onlineUser) => onlineUser.id === user._id),
+          }))
+        );
+        console.log("Updated online users", updatedOnlineUsers);
       });
   
       socket.on("receiveMessage", (data) => {
@@ -110,14 +88,45 @@ function Home() {
         socket.off("disconnect");
       };
     }
-  }, [socket, userInfo]);
+  }, [socket]);
   
+  
+  // useEffect(() => {
+  //   // Check for socket connection on visibility change
+  //   const handleVisibilityChange = () => {
+  //     if (document.visibilityState === "visible") {
+  //       setVisibilityApp(true);
+  
+  //       if (socket && !socket.connected) {
+  //         socket.connect(); // Reconnect if the socket is not connected
+  //         socket.emit("userLoggedIn", {
+  //           username: userInfo.username,
+  //           userId: userInfo.id,
+  //         });
+  //       }
+  //     } else if (document.visibilityState === "hidden") {
+  //       setVisibilityApp(false);
+  //       if (socket && socket.connected) {
+  //         // socket.disconnect(); // Disconnect the socket when the app is not visible
+  //       }
+  //     }
+  //   };
+  
+  //   // Add the event listener for visibilitychange
+  //   document.addEventListener("visibilitychange", handleVisibilityChange);
+  
+  //   // Cleanup the event listener on component unmount
+  //   return () => {
+  //     document.removeEventListener("visibilitychange", handleVisibilityChange);
+  //   };
+  // }, [socket]);
   
 
   
   
 
-  const handleLogout = () => {
+  const handleLogout = async() => {
+    await socket.emit("userLoggedOut");
     dispatch(clearUserInfo());
   };
 

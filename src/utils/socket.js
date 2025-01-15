@@ -4,7 +4,7 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
 let socket = null;
 
 // Initialize socket connection
-export const initSocket = (token) => {
+export const initSocket =  (token) => {
   if (!socket) {
     socket = io(SOCKET_URL, {
       transports: ["websocket"],
@@ -20,8 +20,6 @@ export const initSocket = (token) => {
     socket.on("connect", () => {
       console.log("Socket connected");
     });
-
-    
 
     socket.on("disconnect", () => {
       console.log("Socket disconnected");

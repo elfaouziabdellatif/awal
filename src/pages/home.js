@@ -6,10 +6,12 @@ import Sidebar from "../components/home/SideBar";
 import protectedRoute from "../utils/protectedRouter";
 import ChatArea from "../components/home/ChatArea";
 import { useSocket } from "../context/useSocket";
+import { tr } from "framer-motion/client";
 
 function Home() {
   const dispatch = useDispatch();
   const userInfo = useSelector((state) => state.user.userInfo);
+  const token = useSelector((state) => state.user.token);
   const [users, setUsers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,8 +21,9 @@ function Home() {
   const [visibilityApp, setVisibilityApp] = useState(false);
   const [read, setRead] = useState();
   const selectedUserRef = useRef(selectedUser)
+  
   // Access socket from context
-  const socket = useSocket();
+  const socket = useSocket(token);
   useEffect(() => {
     selectedUserRef.current = selectedUser;
     setMessagesInstantly(null)
@@ -31,11 +34,11 @@ function Home() {
       try {
         setIsLoading(true); // Start loading
         const response = await fetchUsers(userInfo);
-        setUsers(response.data);
+        
         if(response.data.length > 0)
 
         {
-          
+          setUsers(response.data);
           setSelectedUser(response.data[0]);
         }
          // Assume response.data contains the user list
@@ -54,17 +57,32 @@ function Home() {
    
 
 
-  useEffect(() => {
+  useEffect( () => {
     if (socket ) {
-
+      console.log(socket)
+      console.log(token , userInfo)
+      if(socket.connected === false)
+      {
+        socket.connect();
+      }
+      socket.emit("userLoggedIn", {
+      });
       socket.on("updateOnlineUsers", (updatedOnlineUsers) => {
+        console.log("updateOnlineUsers 1");
+        console.log(updatedOnlineUsers !== onlineUsers)
         if(updatedOnlineUsers !== onlineUsers){
           setOnlineUsers(updatedOnlineUsers);
+          console.log("updateOnlineUsers 2", updatedOnlineUsers);
           // Update users with the new online status
           setUsers((prevUsers) =>
             prevUsers.map((user) => ({
               ...user,
               isOnline: updatedOnlineUsers.some((onlineUser) => onlineUser.id === user._id),
+              lastMessage: { 
+                ...(user.lastMessage || {}),
+                isDelivered : updatedOnlineUsers.some((onlineUser) => onlineUser.id === user._id) ? true : user.lastMessage?.isDelivered,
+              },
+
             }))
             
           );
@@ -84,14 +102,36 @@ function Home() {
       });
   
       socket.on("receiveMessage", (data) => {
+        console.log("receiveMessage", data);
         const { id,sender, recipient, message } = data;
-  
         if (userInfo.id === recipient) {
           setNotification({ sender, message });
           
           if (selectedUserRef.current?._id === sender) {
             setMessagesInstantly(data);
           }
+          
+            setUsers((prevUsers) =>
+            prevUsers.map((user) => {
+              if (user._id === sender) {
+                console.log(user)
+                return {
+                  ...user,
+                  unreadMessages:selectedUserRef.current?._id !== sender ? user.unreadMessages + 1 : null,
+                  lastMessage: { 
+                    ...(user.lastMessage || {}),
+                    message,
+                    sender,
+                    recipient,
+                    isSeen:selectedUserRef.current?._id === sender ? true : false,
+                  },
+                };
+              }
+              
+              return user;
+            })
+          );
+          
         }
       });
       socket.on('disconnect', (reason) => {
@@ -143,7 +183,11 @@ function Home() {
   
 
   const handleLogout = async() => {
-    await socket.emit("userLoggedOut");
+    if(socket)
+    {
+      await socket.emit("userLoggedOut");
+    }
+    
     dispatch(clearUserInfo());
   };
 
@@ -163,6 +207,7 @@ function Home() {
           handleLogout={handleLogout}
           notification={notification}
           setNotification={setNotification}
+          setUsers={setUsers}
         />
         <ChatArea
           userInfo={userInfo}
@@ -171,6 +216,7 @@ function Home() {
           setMessagesInstantly={setMessagesInstantly}
           visibilityApp={visibilityApp}
           socket={socket}
+          setUsers={setUsers}
         />
       </div>
     </div>

@@ -10,9 +10,29 @@ const Sidebar = ({
   notification,
   selectedUser,
   setNotification,
+  setUsers,
 }) => {
   const handleUserSelect = (user) => {
     setSelectedUser(user);
+    console.log('selected user is ',user)
+    // removing the icone that count the number of unread messages and modify it to 0 in users state 
+    if (user.unreadMessages > 0) {
+      const updatedUsers = users.map((u) => {
+        if (u._id === user._id) {
+          return {
+             ...u,
+              unreadMessages: 0,
+              lastMessage: { 
+                ...(u.lastMessage || {}),
+                isSeen: true,
+             },
+        }
+        }
+        return u;
+
+      });
+      setUsers(updatedUsers);
+    }
 
     // Clear notification if the selected user is the sender of the notification
     if (notification && notification.sender === user._id) {
@@ -32,41 +52,94 @@ const Sidebar = ({
   }, [notification, selectedUser, setNotification]);
 
   return (
-    <div className="w-1/3 h-screen bg-gray-800 text-white p-4 overflow-y-auto">
+    <div className="w-2/5 h-screen bg-gray-900 text-white p-4 overflow-y-auto">
       <Navbar userInfo={userInfo} handleLogout={handleLogout} />
-      <h2 className="text-2xl font-semibold mt-6 mb-4">Users</h2>
+      <h2 className="text-2xl font-semibold mt-6 mb-4 border-b border-gray-700 pb-2">
+        Chats
+      </h2>
       <div className="flex flex-col gap-4">
         {users.map((user) => {
-          const isOnline = onlineUsers.some(
-            (onlineUser) => onlineUser.id === user._id
-          );
+          const isOnline = user.isOnline;
+          const lastMessage = user.lastMessage;
+          const isRecipient = lastMessage?.recipient === userInfo.id;
+          const hasUnreadMessages =
+            isRecipient && lastMessage?.isSeen === false;
+          const isUserSelected = selectedUser && selectedUser._id === user._id;
 
-          // Determine whether to show the "New" badge
-          const showNotificationBadge =
-            notification &&
-            notification.sender === user._id &&
-            (!selectedUser || selectedUser._id !== user._id);
+          // Determine the message status icons for sent messages
+          const getMessageStatusIcons = () => {
+            if (lastMessage?.isDelivered) {
+              return (
+                <div className="flex items-center gap-1">
+                  <i
+                    className={`fas fa-check ${
+                      lastMessage.isSeen ? "text-blue-500" : "text-gray-500"
+                    }`}
+                  ></i>
+                  <i
+                    className={`fas fa-check ${
+                      lastMessage.isSeen ? "text-blue-500" : "text-gray-500"
+                    }`}
+                  ></i>
+                </div>
+              );
+            }
+            return (
+              <i className="fas fa-check text-gray-500"></i> // Single check for sent but not delivered
+            );
+          };
 
           return (
             <div
               key={user._id}
-              className={`flex items-center justify-between p-3 bg-gray-700 hover:bg-gray-600 rounded-md cursor-pointer transition-all
-                ${selectedUser && selectedUser._id === user._id ? "bg-yellow-600" : ""}`}
-              onClick={() => handleUserSelect(user)}
+              className={`flex items-center justify-between p-4 bg-gray-800 hover:bg-gray-700 rounded-lg cursor-pointer transition-all shadow-md ${
+                isUserSelected ? "border-l-4 border-yellow-500" : ""
+              }`}
+              onClick={(e) =>{e.preventDefault; handleUserSelect(user)}}
             >
-              <p className="text-lg font-semibold">{user.username}</p>
+              <div className="flex items-center gap-3 w-full">
+                {/* Online status indicator */}
+                <div
+                  className={`w-4 h-4 rounded-full ${
+                    user.isOnline ? "bg-green-500" : "bg-yellow-500"
+                  }`}
+                ></div>
 
-              {/* Show "New" badge only if not currently chatting with the sender */}
-              {showNotificationBadge && (
-                <span className="bg-red-500 text-white px-2 py-1 rounded-full text-sm">
-                  New
-                </span>
-              )}
-
-              {/* Online status indicator */}
-              <span
-className={`w-3 h-3 rounded-full transition-colors duration-300 ease-in-out ${user.isOnline ? "bg-green-500" : "bg-red-500"}`}
-></span>
+                {/* User Info */}
+                <div className="flex flex-col w-full">
+                  <div className="flex justify-between items-center w-full">
+                    <p className="text-lg font-semibold truncate">
+                      {user.username}
+                    </p>
+                    {hasUnreadMessages && (
+                      <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs">
+                        { user?.unreadMessages } {/* Default to 1 if not provided */}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between w-full">
+                    <p className="text-sm text-gray-400 truncate">
+                      {lastMessage?.message || "No messages yet"}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {lastMessage?.message && lastMessage && (
+                        <p className="text-xs text-gray-500">
+                          {new Date(lastMessage.timestamp).toLocaleTimeString(
+                            [],
+                            { hour: "2-digit", minute: "2-digit" }
+                          )}
+                        </p>
+                      )}
+                      {lastMessage?.message && lastMessage &&
+                        !isRecipient && ( // Show status icons only if the user is the sender
+                          <div className="flex items-center gap-1">
+                            {getMessageStatusIcons()}
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           );
         })}

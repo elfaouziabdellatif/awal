@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { sendMessage } from "../../utils/api";
 import { initSocket } from "../../utils/socket";
-import { s } from "framer-motion/client";
+import { tr } from "framer-motion/client";
 
-const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead}) => {
+const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead,setUsers}) => {
   const [message, setMessage] = useState("");
 
   const handleSend = async () => {
@@ -33,16 +33,33 @@ const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead}) => {
             sender: userInfo.id,
             recipient: selectedUser._id,
             message: message,
-            read: false,
             isDelivered:selectedUser.isOnline ? true : false,
             deliveredAt : null,
             timestamp: new Date().toISOString(),
+            
           },
-
-        
         ]);
 
-
+        setUsers((prevUsers) =>
+          prevUsers.map((user) => {
+            if (user._id === selectedUser._id) {
+              return {
+                ...user,
+                lastMessage: { 
+                  ...(user.lastMessage || {}),
+                  sender:userInfo.id,
+                  recipient: selectedUser._id,
+                  message,
+                  isDelivered:selectedUser.isOnline ? true : false,
+                  isSeen: false,
+                  timestamp: new Date().toISOString(),
+                },
+              };
+            }
+            
+            return user;
+          })
+        )
         
         
       }

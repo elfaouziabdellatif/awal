@@ -4,8 +4,9 @@ import MessageInput from "./MessageInput";
 import { useSocket } from "../../context/useSocket";
 import { tr } from "framer-motion/client";
 
-const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessagesInstantly,visibilityApp}) => {
+const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessagesInstantly ,setUsers}) => {
   const [messages, setMessages] = useState([]);
+
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -25,7 +26,9 @@ const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessag
   useEffect(() => {
     if (socket) {
     socket.on("read-receipt", ({ sender, recipient }) => {
+      console.log("Read receipt received from:", sender);
       if ( recipient === userInfo.id) {
+        console.log("Read receipt received from:", sender);
         // Update the `read` status of the messages
         const updatedMessages = messagesRef.current.map((msg) =>
           msg.sender === recipient && msg.recipient === sender
@@ -35,7 +38,24 @@ const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessag
   
         // Update the ref with the new messages
         setMessages(updatedMessages);
+        
       }
+
+      setUsers((prevUsers) =>
+        prevUsers.map((user) => {
+          if (user._id === sender ) {
+            return {
+              ...user,
+              lastMessage: { 
+                ...(user.lastMessage || {}),
+                isSeen: true,
+              },
+            };
+          }
+          
+          return user;
+        })
+      )
     });
     
   
@@ -250,7 +270,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="chatarea-container flex flex-col w-full h-full relative">
+    <div className="chatarea-container flex flex-col w-3/5 h-full relative">
       {/* Chat Header */}
       <div className="selecteduser-container bg-gradient-to-r from-teal-500 to-blue-500 p-4 text-white shadow-lg flex items-center">
         {selectedUser ? (
@@ -337,6 +357,7 @@ useEffect(() => {
             userInfo={userInfo}
             setMessages={setMessages}
             setRead={setRead}
+            setUsers={setUsers}
           />
         </div>
       )}

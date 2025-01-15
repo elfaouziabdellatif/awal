@@ -22,14 +22,14 @@ const LoginForm = () => {
             const response = await login(email, password);
             dispatch(setUserInfo({
                 user: response.user,
-                token: response.token
+                token: response.token,
             }));
             // Initialize the socket
             const socket = await initSocket(response.token);
-            await socket.connect();
-            await socket.emit("userLoggedIn");
+            socket.connect();
+            
             // Redirect after login
-            router.push('/home').then(() => window.location.reload());
+            router.push('/home');
         } catch (error) {
             setError(error.message);
         }
@@ -76,6 +76,7 @@ const LoginForm = () => {
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             transition={{ duration: 0.2 }}
+                            onClick={handleSubmit}
                         >
                             Login
                         </motion.button>

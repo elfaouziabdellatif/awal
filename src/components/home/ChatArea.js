@@ -4,7 +4,7 @@ import MessageInput from "./MessageInput";
 import { useSocket } from "../../context/useSocket";
 import { tr } from "framer-motion/client";
 
-const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessagesInstantly ,setUsers}) => {
+const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessagesInstantly ,setUsers , isTyping}) => {
   const [messages, setMessages] = useState([]);
 
   const [loading, setLoading] = useState(false);
@@ -26,9 +26,7 @@ const ChatArea = ({ socket , selectedUser, userInfo ,messagesInstantly,setMessag
   useEffect(() => {
     if (socket) {
     socket.on("read-receipt", ({ sender, recipient }) => {
-      console.log("Read receipt received from:", sender);
       if ( recipient === userInfo.id) {
-        console.log("Read receipt received from:", sender);
         // Update the `read` status of the messages
         const updatedMessages = messagesRef.current.map((msg) =>
           msg.sender === recipient && msg.recipient === sender
@@ -243,7 +241,8 @@ useEffect(() => {
 
   const handleScroll = () => {
     const scrollTop = chatContainerRef.current.scrollTop;
-  
+    const scrollBottom = chatContainerRef.current.scrollHeight - chatContainerRef.current.clientHeight - scrollTop;
+   
     // If the user scrolls to the top, load more messages
     if (scrollTop === 0 && hasMore && !loading) {
       setPage((prevPage) => prevPage + 1);
@@ -260,7 +259,11 @@ useEffect(() => {
   };
   
   
-  
+  useEffect(() => {
+    if (isTyping) {
+      scrollToBottom();
+    }
+  }, [isTyping]);
 
   const scrollToBottom = () => {
 
@@ -329,6 +332,20 @@ useEffect(() => {
               </div>
             );
           })}
+          {
+            isTyping &&  (
+          <div 
+          
+          className={`flex flex-col self-start max-w-xs md:max-w-md`}>
+          <div className={`p-3 rounded-lg shadow-md bg-white text-gray-800 `}>
+            <p>Typing...</p>
+          </div>
+        </div>
+
+            )
+          }
+          
+
         </div>
       </div>
   
@@ -358,6 +375,7 @@ useEffect(() => {
             setMessages={setMessages}
             setRead={setRead}
             setUsers={setUsers}
+            socket={socket}
           />
         </div>
       )}

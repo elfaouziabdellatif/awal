@@ -11,10 +11,10 @@ const Sidebar = ({
   selectedUser,
   setNotification,
   setUsers,
+  usersTyping,
 }) => {
   const handleUserSelect = (user) => {
     setSelectedUser(user);
-    console.log('selected user is ',user)
     // removing the icone that count the number of unread messages and modify it to 0 in users state 
     if (user.unreadMessages > 0) {
       const updatedUsers = users.map((u) => {
@@ -118,9 +118,14 @@ const Sidebar = ({
                     )}
                   </div>
                   <div className="flex items-center justify-between w-full">
-                    <p className="text-sm text-gray-400 truncate">
-                      {lastMessage?.message || "No messages yet"}
-                    </p>
+                  {usersTyping && usersTyping.includes(user._id) ? (
+  <p className="transition-opacity duration-300 opacity-70 text-sm text-gray-400">Typing...</p>
+) : (
+  <p className="transition-opacity duration-300 opacity-60 text-sm text-gray-400 truncate">
+    {lastMessage?.message || "No messages yet"}
+  </p>
+)}
+
                     <div className="flex items-center gap-2">
                       {lastMessage?.message && lastMessage && (
                         <p className="text-xs text-gray-500">
@@ -137,6 +142,7 @@ const Sidebar = ({
                           </div>
                         )}
                     </div>
+                    
                   </div>
                 </div>
               </div>

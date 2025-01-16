@@ -1,15 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { sendMessage } from "../../utils/api";
 import { initSocket } from "../../utils/socket";
-import { tr } from "framer-motion/client";
+import { input, tr } from "framer-motion/client";
 
-const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead,setUsers}) => {
+const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead,setUsers,socket }) => {
   const [message, setMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const inputRef = React.useRef(null);
+
+  useEffect(() => {
+    if(selectedUser && inputRef.current){
+      inputRef.current.focus();
+      setMessage("");
+    }
+    
+  }, [selectedUser]);
 
   const handleSend = async () => {
     if (message.trim()) {
-      const socket = initSocket();
-      
+      setTimeout(() => {
+        setIsTyping(false);
+        socket.emit("stoppedTyping", { recipient: selectedUser._id });
+      }, 1);
        const response = await sendMessage({
         sender: userInfo.id,
         recipient: selectedUser._id,
@@ -77,16 +89,50 @@ const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead,setUsers}) 
     }
   };
 
+  let typingTimeout; // Declare timeout for typing state
+let deleteTimeout; // Declare timeout for deletion state
+
+const handleIsTyping = (e) => {
+  const messageValue = e.target.value;
+  setMessage(messageValue);
+
+  // Emit "isTyping" if the user starts typing and the indicator isn't already visible
+  if (messageValue.length > 0 && !isTyping) {
+    setIsTyping(true);
+    socket.emit("isTyping", { recipient: selectedUser._id });
+  }
+
+  // Clear any existing typing timeout to prevent premature "stoppedTyping"
+ 
+
+  // If the message is empty (user deleted text), set a shorter timeout before emitting "stoppedTyping"
+  if (messageValue.length === 0 && isTyping) {
+    clearTimeout(deleteTimeout); // Clear any previous delete timeout if the message is being re-typed
+
+    // Trigger a stopped typing event after a short delay (e.g., 1 second after the deletion)
+    deleteTimeout = setTimeout(() => {
+      setIsTyping(false);
+      socket.emit("stoppedTyping", { recipient: selectedUser._id });
+    }, 1000); // 1-second delay for empty message (after deletion)
+  }
+};
+
+
+  
+
+
 
   return (
     <div className="flex items-center space-x-4">
       <input
+      ref={inputRef}
         type="text"
-        className="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
+        className="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 "
         placeholder="Type a message..."
         value={message}
-        onChange={(e) => setMessage(e.target.value)}
+        onChange={(e) => handleIsTyping(e)}
         onKeyDown={handlekeydown}
+        autoFocus={selectedUser ? true : false}
       />
       <button
         onClick={handleSend}

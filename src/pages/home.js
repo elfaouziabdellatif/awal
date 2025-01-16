@@ -20,6 +20,8 @@ function Home() {
   const [messagesInstantly, setMessagesInstantly] = useState([]);
   const [visibilityApp, setVisibilityApp] = useState(false);
   const [read, setRead] = useState();
+  const [isTyping, setIsTyping] = useState(false);
+  const [usersTyping, setUsersTyping] = useState([]);
   const selectedUserRef = useRef(selectedUser)
   
   // Access socket from context
@@ -59,8 +61,6 @@ function Home() {
 
   useEffect( () => {
     if (socket ) {
-      console.log(socket)
-      console.log(token , userInfo)
       if(socket.connected === false)
       {
         socket.connect();
@@ -68,11 +68,8 @@ function Home() {
       socket.emit("userLoggedIn", {
       });
       socket.on("updateOnlineUsers", (updatedOnlineUsers) => {
-        console.log("updateOnlineUsers 1");
-        console.log(updatedOnlineUsers !== onlineUsers)
         if(updatedOnlineUsers !== onlineUsers){
           setOnlineUsers(updatedOnlineUsers);
-          console.log("updateOnlineUsers 2", updatedOnlineUsers);
           // Update users with the new online status
           setUsers((prevUsers) =>
             prevUsers.map((user) => ({
@@ -102,7 +99,6 @@ function Home() {
       });
   
       socket.on("receiveMessage", (data) => {
-        console.log("receiveMessage", data);
         const { id,sender, recipient, message } = data;
         if (userInfo.id === recipient) {
           setNotification({ sender, message });
@@ -134,6 +130,25 @@ function Home() {
           
         }
       });
+      socket.on("typing", (data) => {
+        if(selectedUserRef.current?._id === data.userId){
+          console.log('this user is typing');
+          setIsTyping(true);
+        }
+        setUsersTyping((prev) => [...prev, data.userId]);
+        console.log(usersTyping);
+        
+      });
+
+      socket.on("stoppedTyping", (data) => {
+        if(selectedUserRef.current?._id=== data.userId){
+          setIsTyping(false);
+        }
+        setUsersTyping((prev) => prev.filter((userId) => userId !== data.userId));
+      });
+
+
+
       socket.on('disconnect', (reason) => {
         console.log('Disconnected due to:', reason);
         // Optionally, try to reconnect here if needed
@@ -142,6 +157,8 @@ function Home() {
       return () => {
         socket.off("updateOnlineUsers");
         socket.off("receiveMessage");
+        socket.off("typing");
+        socket.off("stoppedTyping");
         socket.off("disconnect");
       };
     }
@@ -208,6 +225,7 @@ function Home() {
           notification={notification}
           setNotification={setNotification}
           setUsers={setUsers}
+          usersTyping = {usersTyping}
         />
         <ChatArea
           userInfo={userInfo}
@@ -217,6 +235,7 @@ function Home() {
           visibilityApp={visibilityApp}
           socket={socket}
           setUsers={setUsers}
+          isTyping={isTyping}
         />
       </div>
     </div>

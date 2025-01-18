@@ -1,4 +1,5 @@
 import RegisterForm from '../components/auth/RegisterForm';
+import protectedRouteWhenUserExist from '../utils/protectedWhenUserExist';
 
 const RegisterPage = () => {
   return (
@@ -8,4 +9,4 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage;
+export default protectedRouteWhenUserExist(RegisterPage);

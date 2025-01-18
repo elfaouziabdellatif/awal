@@ -52,8 +52,7 @@ const Sidebar = ({
   }, [notification, selectedUser, setNotification]);
 
   return (
-    <div className="w-2/5 h-screen bg-gray-900 text-white p-4 overflow-y-auto">
-      <Navbar userInfo={userInfo} handleLogout={handleLogout} />
+    <div className="w-1/3 h-screen bg-gray-900 text-white p-4 overflow-y-auto">
       <h2 className="text-2xl font-semibold mt-6 mb-4 border-b border-gray-700 pb-2">
         Chats
       </h2>
@@ -99,11 +98,21 @@ const Sidebar = ({
             >
               <div className="flex items-center gap-3 w-full">
                 {/* Online status indicator */}
-                <div
-                  className={`w-4 h-4 rounded-full ${
-                    user.isOnline ? "bg-green-500" : "bg-yellow-500"
-                  }`}
-                ></div>
+                <div className="relative">
+                  <img
+                    src={user.profilePicture || ""}
+                    alt={user.username}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  {/* Online status indicator */}
+                  {isOnline ? (
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                  ):
+                  (
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
+                  )
+                }
+                </div>
 
                 {/* User Info */}
                 <div className="flex flex-col w-full">

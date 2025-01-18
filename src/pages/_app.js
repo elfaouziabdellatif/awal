@@ -7,17 +7,21 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 
 import { SocketProvider } from '../context/useSocket';
 import { useEffect } from 'react';
+import Navbar from '../components/layout/navbar';
 
 
 function MyApp({ Component, pageProps }) {
-  const userInfo = useSelector((state) => state.user);
-  const isLoggedIn = userInfo ;
+  const user = useSelector((state) => state.user);
+  const userInfo = user.userInfo;
+  const isLoggedIn = user.token ? true : false;
+  console.log('userInfo', userInfo);
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         {/* Conditionally wrap with SocketProvider if logged in */}
         {isLoggedIn  ? (
           <SocketProvider token={userInfo.token}>
+            <Navbar userInfo={userInfo}></Navbar>
             <Component {...pageProps} />
           </SocketProvider>
         ) : (

@@ -6,6 +6,7 @@ import { input, tr } from "framer-motion/client";
 const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead,setUsers,socket }) => {
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [messagelentgh, setMessagelentgh] = useState(0);
   const inputRef = React.useRef(null);
 
   useEffect(() => {
@@ -91,34 +92,49 @@ const MessageInput = ({ selectedUser, userInfo ,setMessages ,setRead,setUsers,so
 
   let typingTimeout; // Declare timeout for typing state
 let deleteTimeout; // Declare timeout for deletion state
+let stopTypingTimeout; // Declare timeout for stopped typing state
 
-const handleIsTyping = (e) => {
+
+const handleIsTyping =  (e) => {
   const messageValue = e.target.value;
   setMessage(messageValue);
-
+  
   // Emit "isTyping" if the user starts typing and the indicator isn't already visible
   if (messageValue.length > 0 && !isTyping) {
+    clearTimeout(stopTypingTimeout);
+    setMessagelentgh(messageValue.length);
     setIsTyping(true);
     socket.emit("isTyping", { recipient: selectedUser._id });
   }
 
   // Clear any existing typing timeout to prevent premature "stoppedTyping"
- 
+   
+   
 
   // If the message is empty (user deleted text), set a shorter timeout before emitting "stoppedTyping"
   if (messageValue.length === 0 && isTyping) {
-    clearTimeout(deleteTimeout); // Clear any previous delete timeout if the message is being re-typed
+     clearTimeout(deleteTimeout); // Clear any previous delete timeout if the message is being re-typed
 
     // Trigger a stopped typing event after a short delay (e.g., 1 second after the deletion)
     deleteTimeout = setTimeout(() => {
       setIsTyping(false);
       socket.emit("stoppedTyping", { recipient: selectedUser._id });
-    }, 1000); // 1-second delay for empty message (after deletion)
-  }
-};
-
-
+    }, 500); // 1-second delay for empty message (after deletion)
+  }  // 10-second delay for stopped typing
   
+};
+  
+useEffect(() => {
+  if(message.length > 0){
+    stopTypingTimeout = setTimeout(() => {
+      if(message.length === messagelentgh){
+      setIsTyping(false);
+      socket.emit("stoppedTyping", { recipient: selectedUser._id });
+    }
+    }, 4000);
+  }
+}
+, [messagelentgh]);
 
 
 

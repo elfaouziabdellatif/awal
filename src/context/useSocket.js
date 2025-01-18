@@ -3,7 +3,8 @@ import { initSocket, disconnectSocket } from "../utils/socket";
 
 const SocketContext = createContext();
 
-export const SocketProvider = ({ children, token}) => {
+export const SocketProvider = ({ children}) => {
+  const token = localStorage.getItem('token');
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {

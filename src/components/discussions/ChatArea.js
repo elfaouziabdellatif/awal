@@ -273,7 +273,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="chatarea-container flex flex-col w-3/5 h-full relative">
+    <div className="chatarea-container flex flex-col w-2/3 h-full relative">
       {/* Chat Header */}
       <div className="selecteduser-container bg-gradient-to-r from-teal-500 to-blue-500 p-4 text-white shadow-lg flex items-center">
         {selectedUser ? (

@@ -23,5 +23,15 @@ export const markMessagesAsRead = (userId, selectedUserId) =>
     selectedUserId,
   }
 )
+
+export const createPost = (data) => apiClient.post("/posts", data,
+  {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  } 
+);
+
+export const fetchPosts = () => apiClient.get("/posts")
 ;
 

@@ -16,12 +16,12 @@ const FeedComponent = ({ posts }) => {
             {/* User Info Section */}
             <div className="flex items-center space-x-3 mb-4 pb-4 border-b">
               <img
-                src={post.user.profilePicture}
+                src={post?.userdata?.profilePicture}
                 alt="User"
                 className="w-10 h-10 rounded-full object-cover"
               />
               <div>
-                <h3 className="font-semibold text-lg">{post.user.name}</h3>
+                <h3 className="font-semibold text-lg">{post?.userdata?.username}</h3>
                 <p className="text-sm text-gray-500">{new Date(post.createdAt).toLocaleDateString()}</p>
               </div>
             </div>
@@ -31,9 +31,9 @@ const FeedComponent = ({ posts }) => {
             <p className="text-gray-700 mb-3">{post.content}</p>
 
             {/* Post Image */}
-            {post.image && (
+            {post.imageUrl && (
               <img
-                src={post.image} // Show image from online source
+                src={post.imageUrl} // Show image from online source
                 alt="Post"
                 className="w-full h-72 object-contain mt-4 rounded-lg" // Fixed height and responsive width with object-contain
               />

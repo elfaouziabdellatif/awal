@@ -1,3 +1,4 @@
+import { data } from "autoprefixer";
 import apiClient from "./apiclient";
 
 export const registerUser = (data) => apiClient.post("/auth/register", data);
@@ -33,5 +34,7 @@ export const createPost = (data) => apiClient.post("/posts", data,
 );
 
 export const fetchPosts = () => apiClient.get("/posts")
+export const likePost = (postId,userId) => apiClient.post(`/posts/like`,{postId,userId})
+export const commentPost = (postId,userId,comment) => apiClient.post(`/posts/comment`,{postId,userId,comment})
 ;
 

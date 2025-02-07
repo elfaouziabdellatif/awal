@@ -194,48 +194,46 @@ useEffect(() => {
   
   
 
-  const  loadMessages =  (page, reset = false, callback) => {
-    setLoading(true);
-     // Save the current scroll position before loading messages
-    const prevScrollTop = chatContainerRef.current.scrollHeight;
-
-    // Simulate loading delay for better UX
-    setTimeout(() => {
-      fetchMessages(selectedUser._id, userInfo.id, page)
-        .then((response) => {
-          if (response.data.length === 0) {
-            setHasMore(false);
-          } else {
-            setMessages((prevMessages) =>
-              reset ? response.data : [...response.data, ...prevMessages]
-            );
-            setHasMore(true);
-            
-            // if (selectedUser && visibilityApp) {
-            //   handleMarkAsRead(response.data);
-            // }
-            
+  const loadMessages = async (page, reset = false, callback) => {
+    try {
+      setLoading(true); // Show loading indicator
+  
+      // Save the current scroll position before loading messages
+      const prevScrollTop = chatContainerRef.current.scrollHeight;
+  
+      // Fetch messages
+      const response = await new Promise((resolve, reject) => {
+        setTimeout(async () => {
+          try {
+            const res = await fetchMessages(selectedUser._id, userInfo.id, page);
+            resolve(res);
+          } catch (err) {
+            reject(err);
           }
-          setScrollHeight(chatContainerRef.current.scrollHeight);
-          // Trigger the callback after messages are added
-          if (callback) callback(prevScrollTop);
-        })
-        .catch((error) => {
-          console.error("Error fetching messages:", error);
-        }).finally(() => {
-          setLoading(false);
-          // Restore the scroll position after loading messages
-          // if(page > 1)
-          // {
-          //   chatContainerRef.current.scrollTop = scrollPosition;
-          // }else{
-          //   chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-          // }
-
-        });
-          
-    }, 500); // Optional: Add delay to improve UX
+        }, 500); // Delay for better UX
+      });
+  
+      if (response.data.length === 0) {
+        setHasMore(false); // No more messages to load
+      } else {
+        // Update messages
+        setMessages((prevMessages) =>
+          reset ? response.data : [...response.data, ...prevMessages]
+        );
+        setHasMore(true);
+      }
+  
+      setScrollHeight(chatContainerRef.current.scrollHeight);
+  
+      // Call the callback after messages are added
+      if (callback) callback(prevScrollTop);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    } finally {
+      setLoading(false); // Hide loading indicator
+    }
   };
+  
 
   
 

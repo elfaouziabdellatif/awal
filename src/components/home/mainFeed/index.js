@@ -4,6 +4,8 @@ import FeedComponent from './FeedComponent';
 import { useEffect, useState } from 'react';
 import { fetchPosts } from '../../../utils/api';
 import { s, tr } from 'framer-motion/client';
+import { useSocket } from '../../../context/useSocket';
+import { postLikeListener, postUnlikeListener } from '../../../utils/socketevents';
 const MainFeed = ({userInfo}) => {
     // const [posts, setPosts] = useState([
     //     {
@@ -114,6 +116,7 @@ const MainFeed = ({userInfo}) => {
     //   ]);
   
     const [posts, setPosts] = useState([]);
+    const socket = useSocket(userInfo.token);
       useEffect(() => {
 
         const getPosts = async () => {
@@ -122,7 +125,7 @@ const MainFeed = ({userInfo}) => {
             if(response.status === 200 && response.data.length > 0)
             {
 
-              console.log(response.data);
+              console.log(' post 4 ',response.data[0]);
                setPosts(response.data);
             }
 
@@ -137,13 +140,17 @@ const MainFeed = ({userInfo}) => {
        
       }, []);
 
+
+      
+      
+
     return (
         <div className="w-2/3 max-w-4xl mx-auto p-4">
         {/* Post Component */}
         <PostComponent userInfo={userInfo} />
   
         {/* Feed Component */}
-        <FeedComponent posts={posts} />
+        <FeedComponent posts={posts} setPosts={setPosts} userInfo={userInfo} socket={socket} />
       </div>
     );
 

@@ -1,8 +1,22 @@
-import React from "react";
+import React, { useEffect,useState } from "react";
 import { FaUserAlt, FaUsers, FaCalendarAlt, FaHeart, FaThumbsUp, FaUserPlus } from "react-icons/fa";
-
+import { cancelFriendRequest, fetchSuggestionUsers } from "../../../utils/api";
+import { motion } from "framer-motion";
+import { sendFriendRequest } from "../../../utils/api";
+import { Loader2 } from "lucide-react"; // Lucide spinner icon
 const LeftSidebar = ({userInfo}) => {
+  const [loadingRequest, setLoadingRequest] = useState({status:false,friendId:""});
+  const [friendSuggestions, setFriendSuggestions] = useState([
+  ]);
   
+  const [showMoreModal, setShowMoreModal] = useState(false);
+ 
+
+  const handleShowMore = () => {
+    setShowMoreModal(true);
+   
+  };
+
 
   const onlineUsers = [
     { name: "Michael Johnson", avatar: "https://randomuser.me/api/portraits/men/2.jpg" },
@@ -14,14 +28,73 @@ const LeftSidebar = ({userInfo}) => {
   const postCount = 120;
   const likeCount = 750;
 
-  const friendSuggestions = [
-    { name: "Alice Smith", avatar: "https://randomuser.me/api/portraits/women/1.jpg" },
-    { name: "Robert Green", avatar: "https://randomuser.me/api/portraits/men/4.jpg" },
-    { name: "Emily White", avatar: "https://randomuser.me/api/portraits/women/3.jpg" },
-  ];
+  
+  useEffect(() => {
+   
+    const fetchSuggestions = async () => {
+      try {
+        const resp = await fetchSuggestionUsers(userInfo.id);
+        console.log(resp);
+        if (resp.status === 200) {
+          setFriendSuggestions(resp.data);
+        }
+      } catch (error) {
+        console.error("Error fetching suggestions:", error);
+      }
+    }
+    fetchSuggestions();
+  }, []);
 
+  const handleAddFriend = async (friendId) => {
+    // Logic to send a friend request
+    setLoadingRequest({status:true,friendId:friendId});
+    const response = await sendFriendRequest(userInfo.id, friendId);
+    if (response.status === 200) {
+      console.log("Friend request sent successfully!");
+      setFriendSuggestions((prev) =>
+        prev.map((user) =>
+          user._id === friendId ? { ...user, friendshipStatus: "pending" } : user
+        )
+
+      );
+      setTimeout(() => {
+        
+        setLoadingRequest({status:false,friendId:""});
+      }, 200);
+    } else {
+      console.error("Error sending friend request:", response.data);
+       setTimeout(() => {
+        
+        setLoadingRequest({status:false,friendId:""});
+      }, 200);
+    }
+  };
+
+  const handleCancelRequest = async (friendId) => {
+    // Logic to cancel a friend request
+    setLoadingRequest({status:true,friendId:friendId});
+    const response = await cancelFriendRequest(userInfo.id, friendId);
+    if (response.status === 200) {
+      console.log("Friend request canceled successfully!");
+      setFriendSuggestions((prev) =>
+        prev.map((user) =>
+          user._id === friendId ? { ...user, friendshipStatus: "no request" } : user
+        )
+      );
+       setTimeout(() => {
+        
+        setLoadingRequest({status:false,friendId:""});
+      }, 200);
+    } else {
+      console.error("Error canceling friend request:", response.data);
+       setTimeout(() => {
+        
+        setLoadingRequest({status:false,friendId:""});
+      }, 200);
+    }
+  }
   return (
-    <div className="flex-col w-1/3 hidden lg:w-1/4 bg-gray-100 p-4 rounded-lg shadow-lg lg:block ">
+    <div className="flex-col w-2/5 hidden lg:w-1/4 bg-gray-100 p-4 rounded-lg shadow-lg lg:block ">
       {/* Profile Section */}
       <div className="flex items-center space-x-3 p-4 bg-white rounded-lg shadow-sm">
         <img src={userInfo.profilePicture} alt="User Avatar" className="w-12 h-12 rounded-full" />
@@ -58,21 +131,157 @@ const LeftSidebar = ({userInfo}) => {
 
       {/* Friend Suggestions */}
       <div className="mt-6 space-y-4">
-        <h3 className="font-semibold text-lg text-gray-700">Friend Suggestions</h3>
-        <div className="space-y-3">
-          {friendSuggestions.map((user, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm hover:bg-gray-50 transition">
-              <div className="flex items-center space-x-2">
-                <img src={user.avatar} alt="Suggested Friend Avatar" className="w-10 h-10 rounded-full" />
-                <span className="text-sm">{user.name}</span>
-              </div>
-              <button className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full hover:bg-blue-600 transition">
-                Add Friend
-              </button>
-            </div>
-          ))}
+      <h3 className="font-semibold text-lg text-gray-700">Friend Suggestions</h3>
+     
+
+<div className="space-y-4">
+  {friendSuggestions.slice(0,5).map((user, index) => {
+    const isLoading = loadingRequest.friendId === user._id && loadingRequest.status;
+    const isPending = user.friendshipStatus === "pending";
+
+    return (
+      <motion.div
+        key={index}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex items-center justify-between px-5 py-4 bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.015]"
+      >
+        {/* Left: User Info */}
+        <div className="flex items-center space-x-4">
+          <div className="relative">
+            <img
+              src={user.profilePicture}
+              alt="Suggested Friend Avatar"
+              className="w-12 h-12 rounded-full object-cover"
+            />
+            <span className="absolute bottom-0 right-0 bg-green-500 w-3 h-3 rounded-full border-2 border-white"></span>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-800">{user.username}</p>
+            <p className="text-xs text-gray-500 mt-0.5">Mutual friend: John Doe</p>
+          </div>
         </div>
+
+        {/* Right: Button */}
+        <button
+  className={`w-[80px] h-[32px] text-xs rounded-md font-semibold flex items-center justify-center gap-1
+    transition-all duration-300 focus:outline-none
+    ${
+      isPending
+        ? "bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white"
+        : "bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white"
+    }
+  `}
+  onClick={() => {
+    if (isPending) {
+      handleCancelRequest(user._id);
+    } else {
+      handleAddFriend(user._id);
+    }
+  }}
+>
+  {isLoading ? (
+    <Loader2 className="animate-spin w-4 h-4" />
+  ) : isPending ? (
+    "Cancel"
+  ) : (
+    "Add"
+  )}
+</button>
+
+      </motion.div>
+    );
+  })}
+</div>
+
+
+
+      <button
+        onClick={handleShowMore}
+        className="mt-4 w-full bg-gray-200 text-gray-700 text-sm py-2 rounded-full hover:bg-gray-300 transition"
+      >
+        Show More
+      </button>
+    </div>
+{/* Friend Suggestions Modal */}
+{showMoreModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      className="relative bg-white w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-6"
+    >
+      {/* Close Button */}
+      <button
+        onClick={() => setShowMoreModal(false)}
+        className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition"
+      >
+        ✕
+      </button>
+
+      <h2 className="text-xl font-semibold mb-4 text-gray-800">People You May Know</h2>
+
+      <div className="space-y-4">
+        {friendSuggestions.map((user, index) => {
+          const isLoading = loadingRequest.friendId === user._id && loadingRequest.status;
+          const isPending = user.friendshipStatus === "pending";
+
+          return (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, delay: index * 0.05 }}
+              className="flex items-center justify-between px-5 py-4 bg-gray-50 rounded-xl shadow-sm hover:shadow-md transition-all"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <img
+                    src={user.profilePicture}
+                    alt="Suggested Friend Avatar"
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{user.username}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Mutual friend: John Doe</p>
+                </div>
+              </div>
+
+              <button
+                className={`w-[80px] h-[32px] text-xs rounded-md font-semibold flex items-center justify-center gap-1
+                  transition-all duration-300 focus:outline-none
+                  ${
+                    isPending
+                      ? "bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white"
+                      : "bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white"
+                  }
+                `}
+                onClick={() => {
+                  if (isPending) {
+                    handleCancelRequest(user._id);
+                  } else {
+                    handleAddFriend(user._id);
+                  }
+                }}
+              >
+                {isLoading ? (
+                  <Loader2 className="animate-spin w-4 h-4" />
+                ) : isPending ? (
+                  "Cancel"
+                ) : (
+                  "Add"
+                )}
+              </button>
+            </motion.div>
+          );
+        })}
       </div>
+    </motion.div>
+  </div>
+)}
 
       {/* Navigation Links */}
       <div className="mt-6 space-y-4">

@@ -145,7 +145,7 @@ const MainFeed = ({userInfo}) => {
       
 
     return (
-        <div className="w-2/3 max-w-4xl mx-auto p-4">
+        <div className="w-3/5 max-w-4xl mx-auto p-4">
         {/* Post Component */}
         <PostComponent userInfo={userInfo} />
   

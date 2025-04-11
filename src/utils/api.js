@@ -42,9 +42,11 @@ export const fetchSuggestionUsers = (userId) => apiClient.get(`/friendship/sugge
 
 export const sendFriendRequest = (userId, friendId) => apiClient.post(`/friendship/send-request`, { userId, friendId })
 export const cancelFriendRequest = (userId, friendId) => apiClient.post(`/friendship/cancel-request`, { userId, friendId })
-export const acceptFriendRequest = (userId, friendId) => apiClient.post(`/users/request/accept`, { userId, friendId })
-export const rejectFriendRequest = (userId, friendId) => apiClient.post(`/users/request/reject`, { userId, friendId })
-export const fetchFriendRequests = (userId) => apiClient.get(`/users/requests/${userId}`)
+export const acceptFriendRequest = (userId, friendId) => apiClient.post(`/friendship/accept-request`, { userId, friendId })
+export const rejectFriendRequest = (userId, friendId) => apiClient.post(`/friendship/reject-request`, { userId, friendId })
+export const blockUser = (userId, friendId) => apiClient.post(`/friendship/block-user`, { userId, friendId })
+export const removeFriend = (userId, friendId) => apiClient.post(`/friendship/remove`, { userId, friendId })
+export const fetchFriendRequests = (userId) => apiClient.get(`/friendship/requests/`, { params: { userId: userId } })
 
 
 ;

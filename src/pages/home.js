@@ -23,7 +23,7 @@ import RightSide from "../components/home/rightSide";
       
   <LeftSide userInfo={userInfo} />
   <MainFeed userInfo={userInfo} />
-  <RightSide onlineUsers={onlineUsers} />
+  <RightSide onlineUsers={onlineUsers} userInfo={userInfo} />
 
         
 
